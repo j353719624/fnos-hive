@@ -3,12 +3,12 @@ set -u
 BIN="/vol2/@appcenter/hive/bin"
 case "${1:-start}" in
   start)   /bin/bash "${BIN}/start.sh" ;;
-  stop)    pkill -f "/vol2/1000/docker/hive/server" 2>/dev/null
+  stop)    pkill -f "/vol2/@appcenter/hive/bin/hfish/server" 2>/dev/null
            pkill -f "${BIN}/proxy.py" 2>/dev/null
            pkill -f "twistd.*cowrie" 2>/dev/null
            iptables -t nat -D PREROUTING -p tcp --dport 22 -j REDIRECT --to-port 2022 2>/dev/null
            echo stopped ;;
   restart) /bin/bash "${BIN}/start.sh" ;;
-  status)  pgrep -f "/vol2/1000/docker/hive/server" >/dev/null && echo running || echo stopped ;;
+  status)  pgrep -f "${BIN}/hfish/server" >/dev/null && echo running || echo stopped ;;
   *) echo "usage: $0 start|stop|restart|status" ;;
 esac
