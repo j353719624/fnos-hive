@@ -1,0 +1,4 @@
+#!/bin/bash
+set -u
+# 卸载后
+exit 0

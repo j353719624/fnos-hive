@@ -1,0 +1,4 @@
+#!/bin/bash
+set -u
+# 配置前
+exit 0

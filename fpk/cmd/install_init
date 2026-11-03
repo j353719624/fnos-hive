@@ -1,0 +1,4 @@
+#!/bin/bash
+set -u
+# 安装前
+exit 0

@@ -1,0 +1,14 @@
+{
+  ".url": {
+    "hive.Application": {
+      "title": "蜜罐蜂巢",
+      "desc": "HFish 多协议蜜罐",
+      "icon": "images/icon_{0}.png",
+      "type": "iframe",
+      "protocol": "http",
+      "port": "9704",
+      "url": "/web/",
+      "allUsers": false
+    }
+  }
+}

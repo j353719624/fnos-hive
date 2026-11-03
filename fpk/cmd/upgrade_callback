@@ -1,0 +1,4 @@
+#!/bin/bash
+set -u
+# 升级后
+exit 0

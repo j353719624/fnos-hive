@@ -1,0 +1,16 @@
+# 打包产物
+*.fpk
+app.tgz
+*.tar.gz
+*.tgz
+
+# 备份
+*.bak
+*.bak.*
+
+# 运行时
+*.log
+*.pid
+venv/
+__pycache__/
+*.pyc
