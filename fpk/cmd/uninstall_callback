@@ -1,4 +1,20 @@
 #!/bin/bash
 set -u
-# 卸载后
+# 卸载后：移除自启单元、停进程、撤掉 22 端口转发
+systemctl disable --now hive-honeypot.service 2>/dev/null || true
+rm -f /etc/systemd/system/hive-honeypot.service
+systemctl daemon-reload 2>/dev/null || true
+
+pkill -f "/vol2/@appcenter/hive/bin/hfish/server" 2>/dev/null
+pkill -f "/vol2/@appcenter/hive/bin/proxy.py" 2>/dev/null
+pkill -f "twistd.*cowrie" 2>/dev/null
+iptables -t nat -D PREROUTING -p tcp --dport 22 -j REDIRECT --to-port 2022 2>/dev/null
+
+# 完全干净卸载：
+# - /usr/share/hfish 只是软链，rm -f 只删链不删数据；数据真身在
+#   /vol2/@appdata/hive/hfish-data，勾不勾"保留数据"由用户在卸载框里决定
+rm -f /usr/share/hfish
+# 旧版原始安装残留（FPK 已自包含，这些目录不再被引用）
+rm -rf /vol2/1000/docker/hive /vol2/1000/docker/cowrie
+
 exit 0

@@ -66,3 +66,25 @@ md5sum /vol2/1000/docker/hive/server
 | 22 | iptables REDIRECT → 2022 |
 | 9704 | proxy.py |
 | 9210–9226 等 | HFish 内网节点蜜罐（面板里勾选后监听） |
+
+## 后续踩的坑（v3.0.1 修复记录）
+
+### 4. `setsid ./server` 让 status 永远显示已停止
+
+start.sh 用相对路径拉起 HFish，进程 cmdline 只有 `./server`，而 `cmd/main` 里的
+
+```bash
+pgrep -f "/vol2/@appcenter/hive/bin/hfish/server"
+```
+
+匹配的是完整 cmdline，永远落空。结果：飞牛应用中心/桌面一直认为应用"已停止"，桌面图标打不开，`ctl_stop` 的停止按钮也杀不掉进程（`pkill -f` 同理）。
+
+**解法**：绝对路径启动，`setsid "${HF}/server"`，pgrep/pkill 模式即可命中。
+
+### 5. 安装后不启动、重启不自启
+
+fnOS 对第三方 FPK 装完不会自己执行 `cmd/main start`，也没有内置的开机自启开关。**解法**：`install_callback` 写一个 systemd oneshot 单元（enable + 立即 start.sh），oneshot 不托管进程，与应用中心的启停按钮不冲突；`ExecStartPre` 里等 `/vol2` 挂载完成再拉起。
+
+### 6. iframe 被 X-Frame-Options 拦
+
+HFish 响应头若带 `X-Frame-Options`，浏览器会拒绝在飞牛 iframe（跨端口=跨源）里渲染，直连正常、内嵌白屏。**解法**：proxy.py 转发时剥掉 `X-Frame-Options` 和含 `frame-ancestors` 的 `Content-Security-Policy`。

@@ -11,7 +11,7 @@
 | proxy.py | - | 9704 | HTTP→HTTPS 反向代理，供飞牛 iframe 内嵌 |
 
 ```
-hive (FPK)
+hive (FPK, 自包含 ~91 MB)
  ├─ HFish      server 4433，API 4434，蜜罐端口由面板分配
  ├─ Cowrie     twistd 监听 2022，iptables 把 22 转发过来
  └─ proxy.py   9704 暴露给浏览器/iframe，剥掉 Set-Cookie 的 Secure 标志
@@ -19,12 +19,13 @@ hive (FPK)
 
 ## 为什么需要反向代理
 
-HFish 的 Web 面板是自签 HTTPS。两件事会坏：
+HFish 的 Web 面板是自签 HTTPS。三件事会坏：
 
 1. 飞牛 iframe 加载自签 HTTPS 会被浏览器拦；
-2. 它的会话 cookie 带 `Secure`，在 HTTP 页面下浏览器不保存，导致**登录时验证码永远报错**。
+2. 它的会话 cookie 带 `Secure`，在 HTTP 页面下浏览器不保存，导致**登录时验证码永远报错**；
+3. HFish 响应带 `X-Frame-Options`，飞牛 iframe 会被浏览器直接拒绝。
 
-`proxy.py` 把 4433 转成普通 HTTP 的 9704，并把 `Set-Cookie` 里的 `Secure` 剥掉，同时把根路径 `/` 重定向到 `/web/`。所以正确入口是：
+`proxy.py` 把 4433 转成普通 HTTP 的 9704：剥掉 `Set-Cookie` 的 `Secure`、剥掉 `X-Frame-Options` 与含 `frame-ancestors` 的 CSP，并把根路径 `/` 重定向到 `/web/`。所以正确入口是：
 
 ```
 http://<NAS_IP>:9704/
@@ -32,32 +33,46 @@ http://<NAS_IP>:9704/
 
 ## 安装
 
-### 方式一：完整离线包（推荐，含二进制）
+`hive.fpk` 是**完整自包含包**（内含 HFish / Cowrie 二进制、UI 与安装向导，约 91 MB），不依赖机器上的旧安装。
 
-从 [Releases](https://github.com/j353719624/fnos-hive/releases) 下载 `fnos-hive-offline-*.tar.gz`，解压后执行：
+### 方式一：飞牛应用中心（推荐）
 
-```bash
-tar -xzf fnos-hive-offline-*.tar.gz
-cd fnos-hive-offline
-sudo ./install.sh
-```
+应用中心 → 手动安装 → 选择 `hive.fpk`。已安装时覆盖安装即为升级，配置不丢。
 
-### 方式二：只装 FPK（机器上已有运行目录时）
+### 方式二：命令行
 
 ```bash
-fnos-cli app install-fpk fpk/hive.fpk --yes
+fnos-cli app install-fpk hive.fpk --yes
 fnos-cli app start hive --yes
 ```
 
+### 构建
+
+```bash
+bash scripts/build-fpk.sh   # 产出 dist/hive.fpk（完整包）
+```
+
+### 数据库
+
+默认 SQLite，零配置开箱即用。需要集中存储时选 MySQL：提前建好库（如 `HFish`），连接串格式
+`user:password@tcp(host:port)/dbname?charset=utf8mb4&parseTime=true&loc=Local`，装完后在应用「配置」里填写。
+
+## 卸载行为
+
+| 卸载方式 | 结果 |
+|---|---|
+| 勾选「保留数据」 | 配置、账号密码、HFish 数据保留在 `/vol2/@appdata/hive/hfish-data`，重装后直接沿用，无需重新初始化 |
+| 不勾选 | 应用目录、数据目录、软链、systemd 单元、22 端口转发全部清除，无残留 |
+
+数据真身从首次启动起就存放在 `@appdata`，`/usr/share/hfish` 只是指向它的软链（HFish 无感知）。MySQL 外置库不受卸载影响。
+
 ## 路径约定
 
-FPK 本身只有 10 KB，是**启动器**，真正的程序在：
-
 ```
-/vol2/1000/docker/hive/      HFish 二进制 + web + db + config
-/vol2/1000/docker/cowrie/    Cowrie venv + etc + var
-/usr/share/hfish/            运行时配置与 sqlite 数据库
-/vol2/@appcenter/hive/bin/   FPK 解压的启动脚本（start.sh / proxy.py）
+/vol2/@appcenter/hive/bin/        程序与启动脚本（自包含；旧安装位置仅作回退探测）
+/vol2/@appdata/hive/hfish-data/   HFish 运行数据真身（config.toml / 账号 / db）
+/vol2/@appdata/hive/*.log         各组件日志
+/usr/share/hfish                  软链 → 上面的 hfish-data
 ```
 
 ## 首次登录

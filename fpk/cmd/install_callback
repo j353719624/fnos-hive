@@ -1,4 +1,41 @@
 #!/bin/bash
 set -u
-# 安装后
+# 安装后：注册 systemd 托管服务并立即启动
+# Restart=always：无论崩溃还是意外退出，3 秒后整体拉起，不再需要手动。
+# 应用中心的 停止 按钮走 cmd/main → systemctl stop，状态始终一致。
+
+UNIT=/etc/systemd/system/hive-honeypot.service
+BIN=/vol2/@appcenter/hive/bin
+
+# 自包含载荷修复：完整包携带 hfish/cowrie 压缩包，二进制缺失时解包（幂等；轻包无此文件则跳过）。
+# 卸载会清掉 /vol2/1000/docker/hive 旧目录，重装后必须能从包内恢复二进制。
+if [ ! -x "${BIN}/hfish/server" ] && [ -f "${BIN}/hfish.tar.gz" ]; then
+  tar -xzf "${BIN}/hfish.tar.gz" -C "${BIN}" && chmod +x "${BIN}/hfish/server"
+fi
+if [ ! -x "${BIN}/cowrie/venv/bin/twistd" ] && [ -f "${BIN}/cowrie.tar.gz" ]; then
+  tar -xzf "${BIN}/cowrie.tar.gz" -C "${BIN}"
+fi
+
+cat > "$UNIT" <<'EOF'
+[Unit]
+Description=fnOS Hive honeypot (HFish + Cowrie + proxy)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# 开机时 /vol2 可能还没挂载完，最多等 2 分钟
+ExecStartPre=/bin/bash -c 'for i in $(seq 1 60); do [ -x /vol2/@appcenter/hive/bin/start.sh ] && exit 0; sleep 2; done; exit 1'
+ExecStart=/bin/bash /vol2/@appcenter/hive/bin/start.sh fg
+Restart=always
+RestartSec=3
+KillMode=control-group
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload 2>/dev/null || true
+systemctl enable --now hive-honeypot.service 2>/dev/null || /bin/bash /vol2/@appcenter/hive/bin/start.sh
+
 exit 0

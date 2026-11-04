@@ -1,14 +1,33 @@
 #!/bin/bash
 set -u
 BIN="/vol2/@appcenter/hive/bin"
+UNIT=hive-honeypot.service
+UNIT_FILE=/etc/systemd/system/${UNIT}
+
 case "${1:-start}" in
-  start)   /bin/bash "${BIN}/start.sh" ;;
-  stop)    pkill -f "/vol2/@appcenter/hive/bin/hfish/server" 2>/dev/null
-           pkill -f "${BIN}/proxy.py" 2>/dev/null
-           pkill -f "twistd.*cowrie" 2>/dev/null
-           iptables -t nat -D PREROUTING -p tcp --dport 22 -j REDIRECT --to-port 2022 2>/dev/null
-           echo stopped ;;
-  restart) /bin/bash "${BIN}/start.sh" ;;
-  status)  pgrep -f "${BIN}/hfish/server" >/dev/null && echo running || echo stopped ;;
+  start)
+    if [ -f "${UNIT_FILE}" ]; then
+      systemctl start "${UNIT}"    # 托管模式下等价于把 fg 看门格拉起（已在跑则幂等）
+    else
+      /bin/bash "${BIN}/start.sh"
+    fi ;;
+  stop)
+    systemctl stop "${UNIT}" 2>/dev/null
+    pkill -f "/vol2/@appcenter/hive/bin/hfish/server" 2>/dev/null
+    pkill -f "${BIN}/proxy.py" 2>/dev/null
+    pkill -f "twistd.*cowrie" 2>/dev/null
+    iptables -t nat -D PREROUTING -p tcp --dport 22 -j REDIRECT --to-port 2022 2>/dev/null
+    echo stopped ;;
+  restart)
+    if [ -f "${UNIT_FILE}" ]; then systemctl restart "${UNIT}"
+    else /bin/bash "${BIN}/start.sh"; fi ;;
+  status)
+    if systemctl is-active --quiet "${UNIT}" 2>/dev/null; then
+      echo running
+    elif pgrep -f "${BIN}/hfish/server" >/dev/null 2>&1; then
+      echo running
+    else
+      echo stopped
+    fi ;;
   *) echo "usage: $0 start|stop|restart|status" ;;
 esac

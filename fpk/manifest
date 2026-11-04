@@ -1,7 +1,7 @@
 appname = hive
 version = 3.0.0
 display_name = 蜜罐蜂巢 HFish
-desc = <p><strong>HFish 多协议蜜罐</strong>　20+ 协议诱捕，攻击地图、IP 归属、情报联动。</p><p><strong>入口</strong>　https://192.168.110.97:4433/web/　账号 admin / HFish2021</p><p><strong>说明</strong>　程序在 /vol2/1000/docker/hive，本应用负责开机启动与启停。</p>
+desc = <p><strong>HFish 多协议蜜罐</strong>　20+ 协议诱捕，攻击地图、IP 归属、情报联动。</p><p><strong>入口</strong>　https://192.168.110.97:4433/web/　账号 admin / HFish2021</p><p><strong>说明</strong>　程序自包含于应用目录。卸载勾选"保留数据"可保留配置与账号，不勾选则完全清除。</p>
 platform = x86
 source = thirdparty
 maintainer = Hive

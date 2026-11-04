@@ -3,6 +3,7 @@
 app.tgz
 *.tar.gz
 *.tgz
+dist/
 
 # 备份
 *.bak

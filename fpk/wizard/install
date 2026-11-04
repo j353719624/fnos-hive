@@ -1,0 +1,33 @@
+[{
+  "stepTitle": "安装 蜜罐蜂巢 - 数据库设置",
+  "items": [
+    {
+      "type": "tips",
+      "helpText": "蜜罐蜂巢默认使用 SQLite 单文件数据库：零配置、开箱即用、资源占用低，适合绝大多数场景。"
+    },
+    {
+      "type": "tips",
+      "helpText": "如需高并发或集中存储可选择 MySQL。安装前请先准备好 MySQL 实例；安装完成后在应用的「配置」里填写连接串（格式 user:password@tcp(host:port)/dbname?charset=utf8mb4&parseTime=true&loc=Local）。"
+    },
+    {
+      "type": "radio",
+      "field": "hive_db_type",
+      "label": "选择数据库",
+      "initValue": "sqlite",
+      "options": [
+        {
+          "label": "SQLite（推荐）- 零配置、开箱即用",
+          "value": "sqlite"
+        },
+        {
+          "label": "MySQL - 需要已运行的 MySQL 实例",
+          "value": "mysql"
+        }
+      ]
+    },
+    {
+      "type": "tips",
+      "helpText": "部署内容固定为完整版：HFish 3.3.7 多协议诱捕 + Cowrie 3.1.5 真实 SSH 蜜罐 + 反向代理。安装后访问 http://<NAS_IP>:9704/ ，默认账号 admin / HFish2021。"
+    }
+  ]
+}]
