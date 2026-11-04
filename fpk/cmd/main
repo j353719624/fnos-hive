@@ -13,7 +13,8 @@ case "${1:-start}" in
     fi ;;
   stop)
     systemctl stop "${UNIT}" 2>/dev/null
-    pkill -f "/vol2/@appcenter/hive/bin/hfish/server" 2>/dev/null
+    pkill -f "hfish/server" 2>/dev/null
+    pkill -9 -xf "./server" 2>/dev/null
     pkill -f "${BIN}/proxy.py" 2>/dev/null
     pkill -f "twistd.*cowrie" 2>/dev/null
     iptables -t nat -D PREROUTING -p tcp --dport 22 -j REDIRECT --to-port 2022 2>/dev/null

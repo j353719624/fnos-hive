@@ -46,6 +46,8 @@ start_all() {
     [ -e "/usr/share/hfish/$d" ] || cp -rf "${HF}/$d" /usr/share/hfish/ 2>/dev/null || true
   done
   pkill -f "${HF}/server" 2>/dev/null
+  # 清扫可能存在的相对 cmdline 僵尸（旧版脚本以 ./server 拉起，pgrep 绝对路径模式匹配不到）
+  pkill -9 -xf "./server" 2>/dev/null || true
   sleep 1
   # 用绝对路径起进程，保证 pgrep/pkill 能匹配到 cmdline（相对路径 ./server 会导致 status 永远 stopped）
   cd "${HF}" 2>/dev/null && setsid "${HF}/server" >>"${PKGVAR}/hfish.log" 2>&1 &
