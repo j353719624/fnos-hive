@@ -15,6 +15,9 @@ fi
 if [ ! -x "${BIN}/cowrie/venv/bin/twistd" ] && [ -f "${BIN}/cowrie.tar.gz" ]; then
   tar -xzf "${BIN}/cowrie.tar.gz" -C "${BIN}"
 fi
+# Cowrie 拒绝以 root 运行：无论新解包还是残留 root 属主文件，统一交给 admin
+chown -R admin:Users "${BIN}/cowrie" 2>/dev/null || true
+chown -R admin:Users /vol2/1000/docker/cowrie 2>/dev/null || true
 
 cat > "$UNIT" <<'EOF'
 [Unit]

@@ -57,7 +57,9 @@ start_all() {
     fi
     pkill -f "twistd.*cowrie" 2>/dev/null
     sleep 1
-    cd "${CW}" 2>/dev/null && setsid "${VENV}/bin/twistd" -n cowrie >>"${PKGVAR}/cowrie.log" 2>&1 &
+    # Cowrie 拒绝以 root 运行：降权到 admin（目录归属由 install_callback chown 保证）
+    chown -R admin:Users "${CW}/var" 2>/dev/null || true
+    setsid su -s /bin/bash admin -c "cd ${CW} && exec ${VENV}/bin/twistd -n cowrie" </dev/null >>"${PKGVAR}/cowrie.log" 2>&1 &
     sleep 5
     iptables -t nat -C PREROUTING -p tcp --dport 22 -j REDIRECT --to-port 2022 2>/dev/null \
       || iptables -t nat -A PREROUTING -p tcp --dport 22 -j REDIRECT --to-port 2022 2>/dev/null || true
