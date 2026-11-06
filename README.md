@@ -112,6 +112,22 @@ bash scripts/build-fpk.sh   # 产出 dist/hive.fpk（完整包）
 9704    本应用代理
 ```
 
+## 构建
+
+```bash
+./scripts/build-fpk.sh      # 产物：dist/hive.fpk
+```
+
+**构建前必须先把载荷放进 `fpk/app/bin/`**（仓库不放这两个 96MB 的大包）：
+
+```bash
+# 从已安装的 NAS 上取安装时留下的原始包
+scp admin@<NAS>:/vol2/@appcenter/hive/bin/hfish.tar.gz  fpk/app/bin/
+scp admin@<NAS>:/vol2/@appcenter/hive/bin/cowrie.tar.gz fpk/app/bin/
+```
+
+缺少载荷时脚本会直接报错退出 —— 否则打出来的 fpk 装上去是个没有蜜罐服务的空壳。
+
 ## 运维脚本
 
 `scripts/` 下是实测沉淀下来的运维脚本，都不写死任何口令（MySQL 口令运行时从
