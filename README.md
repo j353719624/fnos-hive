@@ -112,6 +112,40 @@ bash scripts/build-fpk.sh   # 产出 dist/hive.fpk（完整包）
 9704    本应用代理
 ```
 
+## 运维脚本
+
+`scripts/` 下是实测沉淀下来的运维脚本，都不写死任何口令（MySQL 口令运行时从
+容器 `mysql` 的 `MYSQL_ROOT_PASSWORD` 环境变量取）：
+
+| 脚本 | 用途 |
+|---|---|
+| `hive-hygiene.sh` | **防复发巡检**：`scanners`+`scans` 超 20 万行或日志超 200MB 才清理，平时零开销。装 `cron.d/hive-hygiene` 每小时跑一次 |
+| `analyze-hive-perf.py` | 扫描数据画像：写入速率、源/端口分布、地址族、真攻击条数对比 |
+| `hive-health-check.sh` | 资源体检：内存/CPU/IO 压力、日志刷什么、表体积、OOM 记录 |
+| `hive-verify.sh` | 面板接口响应时间（判断「卡死」最直接的指标） |
+| `hive-show-config.sh` | 打印 HFish 关键设置（扫描感知/威胁情报/告警策略等） |
+| `hive-fix-stuck.sh` | 卡死应急处置（**含 truncate，会清扫描噪声表**，infos/flows 保留） |
+
+### 「老是卡死」的典型病因（2026-11-06 实例）
+
+HFish 客户端每扫到一次就向 server 上报一次（`POST /api/v1/report/scan`），
+server 逐条写 `scanners`/`scans`/`ip_profile` 三表并打 INFO 日志 —— 实测
+**55 万条/小时、三张表 783MB、日志 338MB、server 常驻 30% CPU、IO 压力 7.6%**，
+而真正的攻击记录（`infos`）只有 221 行。面板对 50 万行做聚合统计要几十秒，
+前端就一直转圈。
+
+处置：两端把 `settings.isScan.is_open` 置 false（注意 `configs` 为空只是不推
+syslog，**照样入库**）、关掉已超授权的威胁情报接口、清理噪声表，再装
+`hive-hygiene.sh` 兜底。关闭扫描感知**不影响** `infos`/`flows`（真攻击记录）
+与守卫的自动封禁（它靠蜜罐命中告警）。
+
+## 文档
+
+| 文档 | 内容 |
+|---|---|
+| [`docs/HFish蜜罐节点部署说明.md`](docs/HFish蜜罐节点部署说明.md) | ECS 上 HFish 节点的部署、端口语义、LUMO 隧道、syslog 汇总到 NAS 守卫、卡死排查 |
+| [`docs/SSH端口迁移记录.md`](docs/SSH端口迁移记录.md) | 真 SSH 迁到 52200 的过程与影响 |
+
 ## 安全提醒
 
 - HFish 默认口令必须改；
